@@ -26,11 +26,8 @@ module.exports = class FatFiles {
                 kappa: true,
                 gofile: true,
                 litterbox: true,
-                catbox: true,
-                pixeldrain: true
+                catbox: true
             },
-            catboxUserHash: "",
-            pixeldrainApiKey: "",
             litterboxExpiry: "72h",
             postingMode: "draft",
             smartMediaEmbeds: true,
@@ -249,12 +246,9 @@ module.exports = class FatFiles {
                 uploadUrl: "https://catbox.moe/user/api.php",
                 pingUrl: "https://catbox.moe",
                 color: "#ff6b81",
-                prepareBody: (file, settings) => {
+                prepareBody: (file) => {
                     const fd = new FormData();
                     fd.append("reqtype", "fileupload");
-                    if (settings.catboxUserHash && settings.catboxUserHash.trim()) {
-                        fd.append("userhash", settings.catboxUserHash.trim());
-                    }
                     fd.append("fileToUpload", file, file.name);
                     return fd;
                 },
@@ -264,35 +258,6 @@ module.exports = class FatFiles {
                         return url;
                     }
                     throw new Error(`Catbox error: ${responseText}`);
-                }
-            },
-            pixeldrain: {
-                id: "pixeldrain",
-                name: "Pixeldrain",
-                maxSize: 20 * 1024 * 1024 * 1024,
-                retentionText: "60+ Days (Up to 20GB with API key)",
-                method: "PUT",
-                pingUrl: "https://pixeldrain.com",
-                color: "#9b59b6",
-                getUploadUrl: (file) => `https://pixeldrain.com/api/file/${encodeURIComponent(file.name)}`,
-                prepareHeaders: (settings) => {
-                    if (settings.pixeldrainApiKey && settings.pixeldrainApiKey.trim()) {
-                        const auth = btoa(`:${settings.pixeldrainApiKey.trim()}`);
-                        return { "Authorization": `Basic ${auth}` };
-                    }
-                    return {};
-                },
-                prepareBody: (file) => file,
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.success && json.id) {
-                            return `https://pixeldrain.com/api/file/${json.id}`;
-                        }
-                        throw new Error(json.message || "Pixeldrain needs an API key in settings");
-                    } catch (e) {
-                        throw new Error(`Pixeldrain error: ${e.message || responseText}`);
-                    }
                 }
             }
         };
@@ -630,8 +595,7 @@ module.exports = class FatFiles {
             kappa: 5,
             gofile: 6,
             litterbox: 7,
-            catbox: 8,
-            pixeldrain: 9
+            catbox: 8
         };
         return order[hostId] || 10;
     }
@@ -1685,7 +1649,6 @@ module.exports = class FatFiles {
                     <option value="gofile" ${this.settings.defaultHost === 'gofile' ? 'selected' : ''}>Gofile.io (10 GB, 1.03 MB/s)</option>
                     <option value="litterbox" ${this.settings.defaultHost === 'litterbox' ? 'selected' : ''}>Litterbox (1 GB, 0.69 MB/s)</option>
                     <option value="catbox" ${this.settings.defaultHost === 'catbox' ? 'selected' : ''}>Catbox.moe (200 MB, permanent)</option>
-                    <option value="pixeldrain" ${this.settings.defaultHost === 'pixeldrain' ? 'selected' : ''}>Pixeldrain (20 GB, with API key)</option>
                 </select>
             </div>
 
@@ -1726,27 +1689,6 @@ module.exports = class FatFiles {
                         <input type="checkbox" id="fatfiles_host_catbox" ${this.settings.enabledHosts.catbox ? 'checked' : ''}>
                         <span><strong>Catbox.moe</strong> (200 MB, permanent storage)</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_pixeldrain" ${this.settings.enabledHosts.pixeldrain ? 'checked' : ''}>
-                        <span><strong>Pixeldrain</strong> (20 GB, requires API key)</span>
-                    </label>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-                <div>
-                    <label style="font-size: 13px; font-weight: 600; color: var(--header-primary, #fff); display: block; margin-bottom: 4px;">
-                        Catbox user hash (optional)
-                    </label>
-                    <input type="text" id="fatfiles_userhash_input" placeholder="Your Catbox user hash token..." value="${this.escapeHtml(this.settings.catboxUserHash || '')}" 
-                        style="background: var(--input-background, #1e1f22); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; width: 100%; font-size: 13px;">
-                </div>
-                <div>
-                    <label style="font-size: 13px; font-weight: 600; color: var(--header-primary, #fff); display: block; margin-bottom: 4px;">
-                        Pixeldrain API key (optional)
-                    </label>
-                    <input type="text" id="fatfiles_pixeldrain_key" placeholder="Your Pixeldrain API key..." value="${this.escapeHtml(this.settings.pixeldrainApiKey || '')}" 
-                        style="background: var(--input-background, #1e1f22); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; width: 100%; font-size: 13px;">
                 </div>
             </div>
 
@@ -1845,24 +1787,6 @@ module.exports = class FatFiles {
         const hostCatbox = panel.querySelector("#fatfiles_host_catbox");
         hostCatbox.addEventListener("change", (e) => {
             this.settings.enabledHosts.catbox = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostPixeldrain = panel.querySelector("#fatfiles_host_pixeldrain");
-        hostPixeldrain.addEventListener("change", (e) => {
-            this.settings.enabledHosts.pixeldrain = e.target.checked;
-            this.saveSettings();
-        });
-
-        const userhashInput = panel.querySelector("#fatfiles_userhash_input");
-        userhashInput.addEventListener("input", (e) => {
-            this.settings.catboxUserHash = e.target.value.trim();
-            this.saveSettings();
-        });
-
-        const pixeldrainKeyInput = panel.querySelector("#fatfiles_pixeldrain_key");
-        pixeldrainKeyInput.addEventListener("input", (e) => {
-            this.settings.pixeldrainApiKey = e.target.value.trim();
             this.saveSettings();
         });
 

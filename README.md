@@ -20,12 +20,12 @@
 
 ## ✨ Features
 
-- 🚀 **Bypass Discords 10MB Limit**: Upload files up to 10GB (or 20GB with Pixeldrain) without getting blocked.
+- 🚀 **Bypass Discords 10MB Limit**: Upload files up to 10GB without getting blocked.
 - ⚡ **Auto Pick (Fastest Server)**: Checks latency to all enabled hosts and automatically uses the fastest server for your file.
 - 🎬 **Direct Media Embeds**: Videos, songs, and images play right inside Discord natively.
 - 📊 **Live Floating Upload Card**: Clean popup in the bottom right corner shows real-time upload speed, percentage, ETA, and a cancel button.
 - 🎛️ **Pre Upload Modal**: Pick your favorite host with one click, or check the box to always auto-upload without asking.
-- 🛠️ **9 Fast Free Hosts**: Tmpfiles.org, Uguu, Temp.sh, x0, Kappa, Gofile, Litterbox, Catbox, and Pixeldrain.
+- 🛠️ **8 Fast Free Hosts**: Tmpfiles.org, Uguu, Temp.sh, x0, Kappa, Gofile, Litterbox, and Catbox (100% free, zero login or API keys needed).
 - ⚙️ **Customizable Settings**: Set your custom size limit trigger, change posting mode (draft or instant send), and toggle hosts on or off.
 
 ---
@@ -35,14 +35,13 @@
 | Host | Max Size | Retention | Direct Player Embeds |
 | :--- | :--- | :--- | :--- |
 | **Tmpfiles.org** | 10 GB | 24 Hours | ✅ Yes (High speed direct stream) |
+| **Gofile.io** | 10 GB | Active Cloud | 📄 Download Page |
 | **Temp.sh** | 4 GB | 3 Days | ✅ Yes (Fast cloud storage) |
+| **Litterbox** | 1 GB | Up to 72 Hours | 📄 Direct Download |
 | **x0.at** | 512 MB | 30 to 365 Days | ✅ Yes (Long term storage) |
 | **Kappa.lol** | 500 MB | 30+ Days | ✅ Yes (Direct video player) |
-| **Uguu.se** | 100 MB | 3 Hours | ✅ Yes (Quick temporary link) |
-| **Gofile.io** | 10 GB | Active Cloud | 📄 Download Page |
-| **Litterbox** | 1 GB | Up to 72 Hours | 📄 Direct Download |
 | **Catbox.moe** | 200 MB | Permanent | ✅ Yes (Direct media link) |
-| **Pixeldrain** | 20 GB | 60+ Days | 📄 Direct Link (With API Key) |
+| **Uguu.se** | 100 MB | 3 Hours | ✅ Yes (Quick temporary link) |
 
 ---
 

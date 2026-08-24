@@ -19,15 +19,14 @@ module.exports = class FatFiles {
             defaultHost: "auto",
             askBeforeUpload: true,
             enabledHosts: {
-                buzzheavier: true,
                 gofile: true,
+                tmpfiles: true,
+                kappa: true,
+                uguu: true,
                 tempsh: true,
                 x0: true,
                 litterbox: true,
-                catbox: true,
-                uguu: true,
-                tmpfiles: true,
-                kappa: true
+                catbox: true
             },
             litterboxExpiry: "72h",
             postingMode: "draft",
@@ -48,36 +47,6 @@ module.exports = class FatFiles {
 
     getHosts() {
         return {
-            buzzheavier: {
-                id: "buzzheavier",
-                name: "Buzzheavier",
-                maxSize: 10 * 1024 * 1024 * 1024,
-                retentionText: "4 Days (No size limit)",
-                method: "PUT",
-                uploadUrl: "https://w.buzzheavier.com",
-                pingUrl: "https://buzzheavier.com",
-                color: "#e84393",
-                getUploadUrl: (file) => {
-                    const safeName = encodeURIComponent(file.name || "upload");
-                    return `https://w.buzzheavier.com/${safeName}`;
-                },
-                prepareBody: (file) => {
-                    return file;
-                },
-                prepareHeaders: () => {
-                    return { "Content-Type": "application/octet-stream" };
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.data && json.data.id) {
-                            return `https://buzzheavier.com/${json.data.id}`;
-                        }
-                    } catch (e) {}
-                    if (responseText.startsWith("http")) return responseText.trim();
-                    throw new Error(`Buzzheavier error: ${responseText}`);
-                }
-            },
             gofile: {
                 id: "gofile",
                 name: "Gofile.io",
@@ -102,6 +71,93 @@ module.exports = class FatFiles {
                     } catch (e) {
                         throw new Error(`Gofile error: ${e.message || responseText}`);
                     }
+                }
+            },
+            tmpfiles: {
+                id: "tmpfiles",
+                name: "Tmpfiles.org",
+                maxSize: 100 * 1024 * 1024,
+                retentionText: "24 Hours (Up to 100MB)",
+                method: "POST",
+                uploadUrl: "https://tmpfiles.org/api/v1/upload",
+                pingUrl: "https://tmpfiles.org",
+                color: "#2ed573",
+                prepareBody: (file) => {
+                    const fd = new FormData();
+                    fd.append("file", file, file.name);
+                    return fd;
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.status === "success" && json.data && json.data.url) {
+                            let rawUrl = json.data.url;
+                            if (rawUrl.includes("tmpfiles.org/") && !rawUrl.includes("tmpfiles.org/dl/")) {
+                                return rawUrl.replace("tmpfiles.org/", "tmpfiles.org/dl/");
+                            }
+                            return rawUrl;
+                        }
+                        if (responseText.startsWith("http")) return responseText.trim();
+                        throw new Error(json.message || "Could not get upload link from Tmpfiles");
+                    } catch (e) {
+                        if (responseText.startsWith("http")) return responseText.trim();
+                        throw new Error(`Tmpfiles error: ${e.message || responseText}`);
+                    }
+                }
+            },
+            kappa: {
+                id: "kappa",
+                name: "Segs.lol",
+                maxSize: 100 * 1024 * 1024,
+                retentionText: "Permanent (Up to 100MB)",
+                method: "POST",
+                uploadUrl: "https://segs.lol/api/upload",
+                pingUrl: "https://segs.lol",
+                color: "#ff9f43",
+                prepareBody: (file) => {
+                    const fd = new FormData();
+                    fd.append("file", file, file.name);
+                    return fd;
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.link) return json.link;
+                        if (json.id) {
+                            const ext = json.ext || "";
+                            return `https://segs.lol/${json.id}${ext}`;
+                        }
+                    } catch (e) {}
+                    if (responseText.startsWith("http")) return responseText.trim();
+                    throw new Error(`Segs.lol error: ${responseText}`);
+                }
+            },
+            uguu: {
+                id: "uguu",
+                name: "Uguu.se",
+                maxSize: 128 * 1024 * 1024,
+                retentionText: "3 Hours (Up to 128MB)",
+                method: "POST",
+                uploadUrl: "https://uguu.se/upload",
+                pingUrl: "https://uguu.se",
+                color: "#e056fd",
+                prepareBody: (file) => {
+                    const fd = new FormData();
+                    fd.append("files[]", file, file.name);
+                    return fd;
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.success && json.files && json.files[0] && json.files[0].url) {
+                            return json.files[0].url;
+                        }
+                    } catch (e) {}
+                    const url = responseText.trim();
+                    if (url.startsWith("http://") || url.startsWith("https://")) {
+                        return url;
+                    }
+                    throw new Error(`Uguu error: ${responseText}`);
                 }
             },
             tempsh: {
@@ -193,93 +249,6 @@ module.exports = class FatFiles {
                         return url;
                     }
                     throw new Error(`Catbox error: ${responseText}`);
-                }
-            },
-            uguu: {
-                id: "uguu",
-                name: "Uguu.se",
-                maxSize: 128 * 1024 * 1024,
-                retentionText: "3 Hours (Up to 128MB)",
-                method: "POST",
-                uploadUrl: "https://uguu.se/upload",
-                pingUrl: "https://uguu.se",
-                color: "#e056fd",
-                prepareBody: (file) => {
-                    const fd = new FormData();
-                    fd.append("files[]", file, file.name);
-                    return fd;
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.success && json.files && json.files[0] && json.files[0].url) {
-                            return json.files[0].url;
-                        }
-                    } catch (e) {}
-                    const url = responseText.trim();
-                    if (url.startsWith("http://") || url.startsWith("https://")) {
-                        return url;
-                    }
-                    throw new Error(`Uguu error: ${responseText}`);
-                }
-            },
-            tmpfiles: {
-                id: "tmpfiles",
-                name: "Tmpfiles.org",
-                maxSize: 100 * 1024 * 1024,
-                retentionText: "24 Hours (Up to 100MB)",
-                method: "POST",
-                uploadUrl: "https://tmpfiles.org/api/v1/upload",
-                pingUrl: "https://tmpfiles.org",
-                color: "#2ed573",
-                prepareBody: (file) => {
-                    const fd = new FormData();
-                    fd.append("file", file, file.name);
-                    return fd;
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.status === "success" && json.data && json.data.url) {
-                            let rawUrl = json.data.url;
-                            if (rawUrl.includes("tmpfiles.org/") && !rawUrl.includes("tmpfiles.org/dl/")) {
-                                return rawUrl.replace("tmpfiles.org/", "tmpfiles.org/dl/");
-                            }
-                            return rawUrl;
-                        }
-                        if (responseText.startsWith("http")) return responseText.trim();
-                        throw new Error(json.message || "Could not get upload link from Tmpfiles");
-                    } catch (e) {
-                        if (responseText.startsWith("http")) return responseText.trim();
-                        throw new Error(`Tmpfiles error: ${e.message || responseText}`);
-                    }
-                }
-            },
-            kappa: {
-                id: "kappa",
-                name: "Segs.lol",
-                maxSize: 100 * 1024 * 1024,
-                retentionText: "Permanent (Up to 100MB)",
-                method: "POST",
-                uploadUrl: "https://segs.lol/api/upload",
-                pingUrl: "https://segs.lol",
-                color: "#ff9f43",
-                prepareBody: (file) => {
-                    const fd = new FormData();
-                    fd.append("file", file, file.name);
-                    return fd;
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.link) return json.link;
-                        if (json.id) {
-                            const ext = json.ext || "";
-                            return `https://segs.lol/${json.id}${ext}`;
-                        }
-                    } catch (e) {}
-                    if (responseText.startsWith("http")) return responseText.trim();
-                    throw new Error(`Segs.lol error: ${responseText}`);
                 }
             }
         };
@@ -609,31 +578,29 @@ module.exports = class FatFiles {
     }
 
     getHostTierPriority(hostId, fileSize) {
-        const largeCutoff = 128 * 1024 * 1024;
+        const largeCutoff = 100 * 1024 * 1024;
         if (fileSize > largeCutoff) {
             const largeOrder = {
-                buzzheavier: 1,
-                gofile: 2,
-                tempsh: 3,
-                x0: 4,
-                litterbox: 5,
-                catbox: 6,
+                gofile: 1,
+                tempsh: 2,
+                x0: 3,
+                litterbox: 4,
+                catbox: 5,
+                uguu: 6,
                 tmpfiles: 7,
-                uguu: 8,
-                kappa: 9
+                kappa: 8
             };
             return largeOrder[hostId] || 10;
         }
         const order = {
             tmpfiles: 1,
-            uguu: 2,
-            x0: 3,
-            tempsh: 4,
-            kappa: 5,
-            gofile: 6,
+            kappa: 2,
+            uguu: 3,
+            gofile: 4,
+            x0: 5,
+            tempsh: 6,
             litterbox: 7,
-            catbox: 8,
-            buzzheavier: 9
+            catbox: 8
         };
         return order[hostId] || 10;
     }

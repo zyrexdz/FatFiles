@@ -29,8 +29,7 @@
 - 🎬 **Direct Media Embeds**: Videos, songs, and images play right inside Discord natively.
 - 📊 **Live Floating Upload Card**: Clean popup in the bottom right corner shows real-time upload speed, percentage, ETA, and a cancel button.
 - 🎛️ **Pre Upload Modal**: Pick your favorite host with one click, or check the box to always auto-upload without asking.
-- 🛠️ **9 Fast Free Hosts**: Buzzheavier, Gofile, Temp.sh, Litterbox, x0, Catbox, Uguu, Tmpfiles.org, and Segs.lol (100% free, zero login or API keys needed).
-- ⚙️ **Customizable Settings**: Set your custom size limit trigger, change posting mode (draft or instant send), and toggle hosts on or off.
+- 🛠️ **8 Fast Free Hosts**: Gofile.io (10GB), Temp.sh (4GB), Litterbox (1GB), x0.at (1GB), Catbox (200MB), Uguu (128MB), Tmpfiles (100MB), and Segs.lol (100MB).
 
 ---
 
@@ -38,7 +37,6 @@
 
 | Host | Max Size | Retention | Direct Player Embeds |
 | :--- | :--- | :--- | :--- |
-| **Buzzheavier** | Unlimited / 10 GB | 4 Days | ✅ Yes (Fast cloud storage) |
 | **Gofile.io** | 10 GB | Active Cloud | 📄 Download Page |
 | **Temp.sh** | 4 GB | 3 Days | ✅ Yes (Fast cloud storage) |
 | **Litterbox** | 1 GB | Up to 72 Hours | 📄 Direct Download |
@@ -47,6 +45,7 @@
 | **Uguu.se** | 128 MB | 3 Hours | ✅ Yes (Quick temporary link) |
 | **Tmpfiles.org** | 100 MB | 24 Hours | ✅ Yes (High speed direct stream) |
 | **Segs.lol** | 100 MB | Permanent | ✅ Yes (Direct video player) |
+
 
 
 ---

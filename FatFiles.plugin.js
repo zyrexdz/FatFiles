@@ -268,11 +268,13 @@ module.exports = class FatFiles {
         this.injectStyles();
         this.attachGlobalEventListeners();
         this.patchUploadPipeline();
+        this.initMediaEmbedder();
     }
 
     stop() {
         this.cancelAllActiveUploads();
         this.detachGlobalEventListeners();
+        this.cleanupMediaEmbedder();
         try {
             BdApi.Patcher.unpatchAll(this.meta.name);
         } catch (e) {}
@@ -1461,6 +1463,84 @@ module.exports = class FatFiles {
             .fatfiles_btn_primary:hover {
                 background: #26af5f;
             }
+
+            .fatfiles_embed_container {
+                margin-top: 8px;
+                margin-bottom: 4px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                max-width: 550px;
+                width: 100%;
+            }
+
+            .fatfiles_embed_item {
+                background: rgba(0, 0, 0, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                overflow: hidden;
+                padding: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .fatfiles_embed_bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 4px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #dbdee1;
+            }
+
+            .fatfiles_embed_filename {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 80%;
+            }
+
+            .fatfiles_embed_download {
+                font-size: 11px;
+                color: #5865F2;
+                text-decoration: none;
+                background: rgba(88, 101, 242, 0.15);
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-weight: 600;
+                transition: background 0.15s ease;
+            }
+
+            .fatfiles_embed_download:hover {
+                background: rgba(88, 101, 242, 0.3);
+                text-decoration: none;
+            }
+
+            .fatfiles_video_player {
+                width: 100%;
+                max-height: 380px;
+                border-radius: 6px;
+                background: #000000;
+                outline: none;
+                display: block;
+            }
+
+            .fatfiles_audio_player {
+                width: 100%;
+                margin: 4px 0;
+                outline: none;
+            }
+
+            .fatfiles_image_player {
+                max-width: 100%;
+                max-height: 400px;
+                border-radius: 6px;
+                object-fit: contain;
+                cursor: pointer;
+                display: block;
+            }
         `;
 
         if (BdApi.DOM && BdApi.DOM.addStyle) {
@@ -1872,6 +1952,162 @@ module.exports = class FatFiles {
         const g = (num >> 8) & 255;
         const b = num & 255;
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    initMediaEmbedder() {
+        this.processExistingMessages();
+
+        this.chatObserver = new MutationObserver((mutations) => {
+            if (!this.settings.smartMediaEmbeds) return;
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        this.scanElementForMedia(node);
+                    }
+                }
+            }
+        });
+
+        const target = document.getElementById("app-mount") || document.body;
+        this.chatObserver.observe(target, { childList: true, subtree: true });
+    }
+
+    cleanupMediaEmbedder() {
+        if (this.chatObserver) {
+            this.chatObserver.disconnect();
+            this.chatObserver = null;
+        }
+        document.querySelectorAll(".fatfiles_embed_container").forEach(el => el.remove());
+    }
+
+    processExistingMessages() {
+        if (!this.settings.smartMediaEmbeds) return;
+        const messageElements = document.querySelectorAll("[id^='chat-messages-'], [id^='message-content-'], li[class*='messageListItem']");
+        messageElements.forEach(el => this.scanElementForMedia(el));
+    }
+
+    scanElementForMedia(rootEl) {
+        if (!rootEl || !rootEl.querySelectorAll) return;
+
+        const messageNodes = rootEl.matches && (rootEl.matches("[id^='chat-messages-']") || rootEl.matches("li[class*='messageListItem']"))
+            ? [rootEl]
+            : rootEl.querySelectorAll("[id^='chat-messages-'], li[class*='messageListItem']");
+
+        if (messageNodes.length === 0) {
+            const contentEl = rootEl.matches && (rootEl.matches("[id^='message-content-']") || (rootEl.className && String(rootEl.className).includes("messageContent")))
+                ? rootEl
+                : rootEl.querySelector("[id^='message-content-'], [class*='messageContent']");
+            if (contentEl) {
+                this.embedMediaInMessageContent(contentEl);
+            }
+            return;
+        }
+
+        messageNodes.forEach(msgNode => {
+            const contentEl = msgNode.querySelector("[id^='message-content-'], [class*='messageContent']");
+            if (contentEl) {
+                this.embedMediaInMessageContent(contentEl);
+            }
+        });
+    }
+
+    embedMediaInMessageContent(contentEl) {
+        if (!contentEl) return;
+        const parent = contentEl.parentElement;
+        if (!parent) return;
+
+        if (parent.querySelector(".fatfiles_embed_container")) return;
+
+        const text = contentEl.innerText || contentEl.textContent || "";
+        const links = Array.from(contentEl.querySelectorAll("a[href]")).map(a => a.href).join(" ");
+        const fullText = `${text} ${links}`;
+
+        const mediaList = this.extractMediaUrlsFromText(fullText);
+        if (mediaList.length === 0) return;
+
+        const seenUrls = new Set();
+        const uniqueMedia = mediaList.filter(m => {
+            if (seenUrls.has(m.url)) return false;
+            seenUrls.add(m.url);
+            return true;
+        });
+
+        const container = document.createElement("div");
+        container.className = "fatfiles_embed_container";
+
+        for (const media of uniqueMedia) {
+            const itemWrapper = document.createElement("div");
+            itemWrapper.className = "fatfiles_embed_item";
+
+            const rawName = media.url.split("/").pop().split("?")[0] || "media_file";
+            let fileName = rawName;
+            try {
+                fileName = decodeURIComponent(rawName);
+            } catch (e) {}
+
+            if (media.type === "video") {
+                itemWrapper.innerHTML = `
+                    <div class="fatfiles_embed_bar">
+                        <span class="fatfiles_embed_filename">🎬 ${this.escapeHtml(fileName)}</span>
+                        <a class="fatfiles_embed_download" href="${this.escapeHtml(media.url)}" target="_blank" rel="noreferrer noopener" download>⬇️ Save</a>
+                    </div>
+                    <video class="fatfiles_video_player" src="${this.escapeHtml(media.url)}" controls preload="metadata" playsinline></video>
+                `;
+            } else if (media.type === "audio") {
+                itemWrapper.innerHTML = `
+                    <div class="fatfiles_embed_bar">
+                        <span class="fatfiles_embed_filename">🎵 ${this.escapeHtml(fileName)}</span>
+                        <a class="fatfiles_embed_download" href="${this.escapeHtml(media.url)}" target="_blank" rel="noreferrer noopener" download>⬇️ Save</a>
+                    </div>
+                    <audio class="fatfiles_audio_player" src="${this.escapeHtml(media.url)}" controls preload="metadata"></audio>
+                `;
+            } else if (media.type === "image") {
+                itemWrapper.innerHTML = `
+                    <div class="fatfiles_embed_bar">
+                        <span class="fatfiles_embed_filename">🖼️ ${this.escapeHtml(fileName)}</span>
+                        <a class="fatfiles_embed_download" href="${this.escapeHtml(media.url)}" target="_blank" rel="noreferrer noopener">🔍 View</a>
+                    </div>
+                    <img class="fatfiles_image_player" src="${this.escapeHtml(media.url)}" loading="lazy" alt="${this.escapeHtml(fileName)}">
+                `;
+                const img = itemWrapper.querySelector(".fatfiles_image_player");
+                if (img) {
+                    img.addEventListener("click", () => window.open(media.url, "_blank"));
+                }
+            }
+
+            container.appendChild(itemWrapper);
+        }
+
+        if (contentEl.nextSibling) {
+            parent.insertBefore(container, contentEl.nextSibling);
+        } else {
+            parent.appendChild(container);
+        }
+    }
+
+    extractMediaUrlsFromText(text) {
+        if (!text || typeof text !== "string") return [];
+        const urlRegex = /https?:\/\/[^\s<>"'`)]+/gi;
+        const matches = text.match(urlRegex) || [];
+        const mediaUrls = [];
+        const videoExts = ["mp4", "webm", "mov", "m4v", "mkv", "ogv"];
+        const audioExts = ["mp3", "ogg", "wav", "flac", "m4a", "aac", "opus"];
+        const imageExts = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
+
+        for (let rawUrl of matches) {
+            let cleanUrl = rawUrl.replace(/[.,;!?]+$/, "");
+            let cleanLower = cleanUrl.toLowerCase().split("?")[0].split("#")[0];
+            let ext = cleanLower.split(".").pop();
+
+            if (videoExts.includes(ext)) {
+                mediaUrls.push({ url: cleanUrl, type: "video", ext });
+            } else if (audioExts.includes(ext)) {
+                mediaUrls.push({ url: cleanUrl, type: "audio", ext });
+            } else if (imageExts.includes(ext)) {
+                mediaUrls.push({ url: cleanUrl, type: "image", ext });
+            }
+        }
+        return mediaUrls;
     }
 
     escapeHtml(str) {

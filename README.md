@@ -12,6 +12,10 @@
 
 <br/>
 
+![FatFiles Preview](preview.png)
+
+<br/>
+
 **FatFiles** is a BetterDiscord plugin that lets you send huge videos, zips, music, and documents past Discord's 10MB limit for free. Just drag and drop any file into chat like normal. The plugin automatically uploads it to the fastest free file host and puts a playable direct link right in your message box.
 
 </div>

@@ -268,13 +268,11 @@ module.exports = class FatFiles {
         this.injectStyles();
         this.attachGlobalEventListeners();
         this.patchUploadPipeline();
-        this.initMediaEmbedder();
     }
 
     stop() {
         this.cancelAllActiveUploads();
         this.detachGlobalEventListeners();
-        this.cleanupMediaEmbedder();
         try {
             BdApi.Patcher.unpatchAll(this.meta.name);
         } catch (e) {}
@@ -1464,82 +1462,324 @@ module.exports = class FatFiles {
                 background: #26af5f;
             }
 
-            .fatfiles_embed_container {
-                margin-top: 8px;
-                margin-bottom: 4px;
+            .fatfiles_settings_container {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
-                max-width: 550px;
-                width: 100%;
+                gap: 18px;
+                padding: 4px 4px 16px 4px;
+                color: #dbdee1;
+                font-family: var(--font-primary, 'gg sans', 'Noto Sans', sans-serif);
             }
 
-            .fatfiles_embed_item {
-                background: rgba(0, 0, 0, 0.35);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 8px;
-                overflow: hidden;
-                padding: 8px;
+            .fatfiles_section_title {
+                font-size: 12px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #949ba4;
+                margin-bottom: 6px;
                 display: flex;
-                flex-direction: column;
+                align-items: center;
                 gap: 6px;
             }
 
-            .fatfiles_embed_bar {
+            .fatfiles_card_group {
+                background: #2b2d31;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .fatfiles_setting_item {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 4px;
-                font-size: 12px;
-                font-weight: 600;
-                color: #dbdee1;
-            }
-
-            .fatfiles_embed_filename {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 80%;
-            }
-
-            .fatfiles_embed_download {
-                font-size: 11px;
-                color: #5865F2;
-                text-decoration: none;
-                background: rgba(88, 101, 242, 0.15);
-                padding: 2px 8px;
-                border-radius: 4px;
-                font-weight: 600;
+                padding: 12px 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                gap: 16px;
                 transition: background 0.15s ease;
             }
 
-            .fatfiles_embed_download:hover {
-                background: rgba(88, 101, 242, 0.3);
-                text-decoration: none;
+            .fatfiles_setting_item:last-child {
+                border-bottom: none;
             }
 
-            .fatfiles_video_player {
-                width: 100%;
-                max-height: 380px;
-                border-radius: 6px;
-                background: #000000;
-                outline: none;
-                display: block;
+            .fatfiles_setting_item:hover {
+                background: rgba(255, 255, 255, 0.02);
             }
 
-            .fatfiles_audio_player {
-                width: 100%;
-                margin: 4px 0;
-                outline: none;
+            .fatfiles_setting_info {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                flex: 1;
             }
 
-            .fatfiles_image_player {
-                max-width: 100%;
-                max-height: 400px;
-                border-radius: 6px;
-                object-fit: contain;
+            .fatfiles_setting_label {
+                font-size: 14px;
+                font-weight: 600;
+                color: #f2f3f5;
+            }
+
+            .fatfiles_setting_desc {
+                font-size: 12px;
+                color: #949ba4;
+                line-height: 1.4;
+            }
+
+            .fatfiles_switch {
+                position: relative;
+                display: inline-block;
+                width: 42px;
+                height: 24px;
+                flex-shrink: 0;
                 cursor: pointer;
-                display: block;
+            }
+
+            .fatfiles_switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+
+            .fatfiles_slider {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #80848e;
+                transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 12px;
+            }
+
+            .fatfiles_slider:before {
+                position: absolute;
+                content: "";
+                height: 18px;
+                width: 18px;
+                left: 3px;
+                bottom: 3px;
+                background-color: #ffffff;
+                transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 50%;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+
+            .fatfiles_switch input:checked + .fatfiles_slider {
+                background-color: #23a55a;
+            }
+
+            .fatfiles_switch input:checked + .fatfiles_slider:before {
+                transform: translateX(18px);
+            }
+
+            .fatfiles_input_number {
+                background: #1e1f22;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                color: #ffffff;
+                padding: 6px 10px;
+                font-size: 13px;
+                font-weight: 600;
+                width: 75px;
+                text-align: center;
+                outline: none;
+                transition: border-color 0.15s, box-shadow 0.15s;
+            }
+
+            .fatfiles_input_number:focus {
+                border-color: #5865F2;
+                box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.25);
+            }
+
+            .fatfiles_select {
+                background: #1e1f22;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                color: #ffffff;
+                padding: 6px 12px;
+                font-size: 13px;
+                font-weight: 500;
+                outline: none;
+                cursor: pointer;
+                max-width: 280px;
+                width: 100%;
+                transition: border-color 0.15s;
+            }
+
+            .fatfiles_select:focus {
+                border-color: #5865F2;
+            }
+
+            .fatfiles_hosts_grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 8px;
+            }
+
+            .fatfiles_host_toggle_card {
+                background: #2b2d31;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 8px 12px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                transition: all 0.15s ease;
+            }
+
+            .fatfiles_host_toggle_card:hover {
+                background: rgba(255, 255, 255, 0.04);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .fatfiles_host_toggle_left {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                overflow: hidden;
+            }
+
+            .fatfiles_host_indicator {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .fatfiles_host_toggle_info {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                overflow: hidden;
+            }
+
+            .fatfiles_host_toggle_name {
+                font-size: 13px;
+                font-weight: 600;
+                color: #f2f3f5;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .fatfiles_host_toggle_desc {
+                font-size: 11px;
+                color: #949ba4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .fatfiles_radio_cards {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                width: 100%;
+                margin-top: 6px;
+            }
+
+            .fatfiles_radio_card {
+                background: #1e1f22;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 10px 12px;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                transition: all 0.15s ease;
+            }
+
+            .fatfiles_radio_card:hover {
+                background: rgba(255, 255, 255, 0.04);
+                border-color: rgba(255, 255, 255, 0.15);
+            }
+
+            .fatfiles_radio_card.fatfiles_radio_active {
+                background: rgba(88, 101, 242, 0.12);
+                border-color: #5865F2;
+            }
+
+            .fatfiles_radio_card_title {
+                font-size: 13px;
+                font-weight: 600;
+                color: #f2f3f5;
+            }
+
+            .fatfiles_radio_card.fatfiles_radio_active .fatfiles_radio_card_title {
+                color: #5865F2;
+            }
+
+            .fatfiles_radio_card_desc {
+                font-size: 11px;
+                color: #949ba4;
+            }
+
+            .fatfiles_ping_box {
+                background: #2b2d31;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 12px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 14px;
+            }
+
+            .fatfiles_ping_btn {
+                background: #5865F2;
+                color: #ffffff;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                flex-shrink: 0;
+            }
+
+            .fatfiles_ping_btn:hover {
+                background: #4752c4;
+            }
+
+            .fatfiles_ping_btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            .fatfiles_ping_results_area {
+                margin-top: 8px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .fatfiles_ping_chip {
+                background: #1e1f22;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 11px;
+                font-weight: 500;
+                color: #dbdee1;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .fatfiles_ping_chip_good {
+                color: #2ed573;
+            }
+
+            .fatfiles_ping_chip_bad {
+                color: #ff4757;
             }
         `;
 
@@ -1677,130 +1917,125 @@ module.exports = class FatFiles {
 
     getSettingsPanel() {
         const panel = document.createElement("div");
-        panel.style.padding = "16px";
-        panel.style.color = "var(--text-normal, #dcddde)";
-        panel.style.fontFamily = "var(--font-primary, sans-serif)";
+        panel.className = "fatfiles_settings_container";
+
+        const hosts = this.getHosts();
+        const hostsGridHtml = Object.values(hosts).map(h => `
+            <div class="fatfiles_host_toggle_card">
+                <div class="fatfiles_host_toggle_left">
+                    <span class="fatfiles_host_indicator" style="background: ${h.color};"></span>
+                    <div class="fatfiles_host_toggle_info">
+                        <span class="fatfiles_host_toggle_name">${h.name}</span>
+                        <span class="fatfiles_host_toggle_desc">${h.retentionText} • ${this.formatBytes(h.maxSize)}</span>
+                    </div>
+                </div>
+                <label class="fatfiles_switch">
+                    <input type="checkbox" id="fatfiles_host_${h.id}" data_host_key="${h.id}" ${this.settings.enabledHosts[h.id] !== false ? 'checked' : ''}>
+                    <span class="fatfiles_slider"></span>
+                </label>
+            </div>
+        `).join("");
 
         panel.innerHTML = `
-            <div style="margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px;">
-                <h2 style="font-size: 20px; font-weight: 700; color: var(--header-primary, #fff); margin-bottom: 6px;">
-                    FatFiles Settings
-                </h2>
-                <p style="font-size: 13px; color: var(--text-muted, #949ba4); line-height: 1.4;">
-                    Send files over 10MB to fast free hosts and drop playable links straight into chat.
-                </p>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 14px; font-weight: 600; color: var(--header-primary, #fff); display: block; margin-bottom: 4px;">
-                    File size limit (MB)
-                </label>
-                <div style="font-size: 12px; color: var(--text-muted, #949ba4); margin-bottom: 8px;">
-                    Any file bigger than this will get uploaded to a fast host instead of Discord.
-                </div>
-                <input type="number" id="fatfiles_threshold_input" min="1" max="100" value="${this.settings.uploadThresholdMB || 10}" 
-                    style="background: var(--input-background, #1e1f22); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; width: 120px; font-size: 14px;">
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--header-primary, #fff);">
-                    <input type="checkbox" id="fatfiles_ask_modal_toggle" ${this.settings.askBeforeUpload ? 'checked' : ''}>
-                    <span>Ask before uploading</span>
-                </label>
-                <div style="font-size: 12px; color: var(--text-muted, #949ba4); margin-top: 4px; margin-left: 24px;">
-                    Shows a quick popup when you drop big files so you can choose where to upload.
-                </div>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 14px; font-weight: 600; color: var(--header-primary, #fff); display: block; margin-bottom: 4px;">
-                    Favorite host
-                </label>
-                <div style="font-size: 12px; color: var(--text-muted, #949ba4); margin-bottom: 8px;">
-                    Pick where your files go or leave it on Auto so it picks the fastest server for you.
-                </div>
-                <select id="fatfiles_default_host" style="background: var(--input-background, #1e1f22); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; width: 100%; max-width: 340px; font-size: 14px;">
-                    <option value="auto" ${this.settings.defaultHost === 'auto' ? 'selected' : ''}>Auto (Tmpfiles.org, 18.5s and Direct Player)</option>
-                    <option value="tmpfiles" ${this.settings.defaultHost === 'tmpfiles' ? 'selected' : ''}>Tmpfiles.org (10 GB, 4.14 MB/s)</option>
-                    <option value="uguu" ${this.settings.defaultHost === 'uguu' ? 'selected' : ''}>Uguu.se (100 MB, 27.3s)</option>
-                    <option value="tempsh" ${this.settings.defaultHost === 'tempsh' ? 'selected' : ''}>Temp.sh (4 GB, 2.09 MB/s)</option>
-                    <option value="x0" ${this.settings.defaultHost === 'x0' ? 'selected' : ''}>x0.at (512 MB, 30 to 365 days)</option>
-                    <option value="kappa" ${this.settings.defaultHost === 'kappa' ? 'selected' : ''}>Kappa.lol (500 MB, 1.60 MB/s)</option>
-                    <option value="gofile" ${this.settings.defaultHost === 'gofile' ? 'selected' : ''}>Gofile.io (10 GB, 1.03 MB/s)</option>
-                    <option value="litterbox" ${this.settings.defaultHost === 'litterbox' ? 'selected' : ''}>Litterbox (1 GB, 0.69 MB/s)</option>
-                    <option value="catbox" ${this.settings.defaultHost === 'catbox' ? 'selected' : ''}>Catbox.moe (200 MB, permanent)</option>
-                </select>
-            </div>
-
-            <div style="margin-bottom: 24px;">
-                <label style="font-size: 14px; font-weight: 600; color: var(--header-primary, #fff); display: block; margin-bottom: 6px;">
-                    Enabled hosts
-                </label>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_tmpfiles" ${this.settings.enabledHosts.tmpfiles ? 'checked' : ''}>
-                        <span><strong>Tmpfiles.org</strong> (10 GB, 4.14 MB/s direct player)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_uguu" ${this.settings.enabledHosts.uguu ? 'checked' : ''}>
-                        <span><strong>Uguu.se</strong> (100 MB, fast direct stream)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_tempsh" ${this.settings.enabledHosts.tempsh ? 'checked' : ''}>
-                        <span><strong>Temp.sh</strong> (4 GB, 2.09 MB/s fast storage)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_x0" ${this.settings.enabledHosts.x0 ? 'checked' : ''}>
-                        <span><strong>x0.at</strong> (512 MB, 30 to 365 days retention)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_kappa" ${this.settings.enabledHosts.kappa ? 'checked' : ''}>
-                        <span><strong>Kappa.lol</strong> (500 MB, direct video embeds)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_gofile" ${this.settings.enabledHosts.gofile ? 'checked' : ''}>
-                        <span><strong>Gofile.io</strong> (10 GB, cloud download)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_litterbox" ${this.settings.enabledHosts.litterbox ? 'checked' : ''}>
-                        <span><strong>Litterbox</strong> (1 GB, up to 72 hours)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_host_catbox" ${this.settings.enabledHosts.catbox ? 'checked' : ''}>
-                        <span><strong>Catbox.moe</strong> (200 MB, permanent storage)</span>
-                    </label>
+            <div>
+                <div class="fatfiles_section_title">⚡ General</div>
+                <div class="fatfiles_card_group">
+                    <div class="fatfiles_setting_item">
+                        <div class="fatfiles_setting_info">
+                            <div class="fatfiles_setting_label">Upload limit trigger (MB)</div>
+                            <div class="fatfiles_setting_desc">Files larger than this will be uploaded to a fast server instead of Discord.</div>
+                        </div>
+                        <input type="number" id="fatfiles_threshold_input" class="fatfiles_input_number" min="1" max="100" value="${this.settings.uploadThresholdMB || 10}">
+                    </div>
+                    <div class="fatfiles_setting_item">
+                        <div class="fatfiles_setting_info">
+                            <div class="fatfiles_setting_label">Ask before uploading</div>
+                            <div class="fatfiles_setting_desc">Shows a quick server picker popup when you drop big files.</div>
+                        </div>
+                        <label class="fatfiles_switch">
+                            <input type="checkbox" id="fatfiles_ask_modal_toggle" ${this.settings.askBeforeUpload ? 'checked' : ''}>
+                            <span class="fatfiles_slider"></span>
+                        </label>
+                    </div>
+                    <div class="fatfiles_setting_item">
+                        <div class="fatfiles_setting_info">
+                            <div class="fatfiles_setting_label">Preferred host</div>
+                            <div class="fatfiles_setting_desc">Choose a favorite server or leave it on Auto to pick the fastest one.</div>
+                        </div>
+                        <select id="fatfiles_default_host" class="fatfiles_select">
+                            <option value="auto" ${this.settings.defaultHost === 'auto' ? 'selected' : ''}>⚡ Auto (Fastest Server)</option>
+                            <option value="tmpfiles" ${this.settings.defaultHost === 'tmpfiles' ? 'selected' : ''}>Tmpfiles.org (10 GB, direct link)</option>
+                            <option value="gofile" ${this.settings.defaultHost === 'gofile' ? 'selected' : ''}>Gofile.io (10 GB, cloud storage)</option>
+                            <option value="tempsh" ${this.settings.defaultHost === 'tempsh' ? 'selected' : ''}>Temp.sh (4 GB, 3 days)</option>
+                            <option value="litterbox" ${this.settings.defaultHost === 'litterbox' ? 'selected' : ''}>Litterbox (1 GB, 72 hours)</option>
+                            <option value="x0" ${this.settings.defaultHost === 'x0' ? 'selected' : ''}>x0.at (512 MB, long retention)</option>
+                            <option value="kappa" ${this.settings.defaultHost === 'kappa' ? 'selected' : ''}>Kappa.lol (500 MB, video player)</option>
+                            <option value="catbox" ${this.settings.defaultHost === 'catbox' ? 'selected' : ''}>Catbox.moe (200 MB, permanent)</option>
+                            <option value="uguu" ${this.settings.defaultHost === 'uguu' ? 'selected' : ''}>Uguu.se (100 MB, temporary)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 14px; font-weight: 600; color: var(--header-primary, #fff); display: block; margin-bottom: 6px;">
-                    How links are posted
-                </label>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="radio" name="fatfiles_post_mode" value="draft" ${this.settings.postingMode === 'draft' ? 'checked' : ''}>
-                        <span><strong>Put in chat box</strong> (look it over before sending)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="radio" name="fatfiles_post_mode" value="send" ${this.settings.postingMode === 'send' ? 'checked' : ''}>
-                        <span><strong>Send straight to chat</strong> (posts message automatically)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; margin-top: 4px;">
-                        <input type="checkbox" id="fatfiles_smart_embeds" ${this.settings.smartMediaEmbeds ? 'checked' : ''}>
-                        <span><strong>Direct media embeds</strong> (videos, songs, and images play right inside Discord)</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;">
-                        <input type="checkbox" id="fatfiles_show_widget" ${this.settings.showFloatingWidget ? 'checked' : ''}>
-                        <span><strong>Show upload progress card</strong> (shows live upload speed, progress, and cancel button)</span>
-                    </label>
+            <div>
+                <div class="fatfiles_section_title">🌐 Active Upload Hosts</div>
+                <div class="fatfiles_hosts_grid">
+                    ${hostsGridHtml}
                 </div>
             </div>
 
-            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
-                <button id="fatfiles_test_ping_btn" style="background: var(--brand-experiment, #5865F2); color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; font-size: 13px;">
-                    Test speed to all hosts
-                </button>
-                <div id="fatfiles_ping_results" style="font-size: 12px; color: var(--text-muted, #949ba4);"></div>
+            <div>
+                <div class="fatfiles_section_title">📤 Delivery & Display</div>
+                <div class="fatfiles_card_group">
+                    <div class="fatfiles_setting_item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                        <div class="fatfiles_setting_info">
+                            <div class="fatfiles_setting_label">How to post links</div>
+                            <div class="fatfiles_setting_desc">Decide if you want to inspect links in your message box before sending.</div>
+                        </div>
+                        <div class="fatfiles_radio_cards">
+                            <div class="fatfiles_radio_card ${this.settings.postingMode === 'draft' ? 'fatfiles_radio_active' : ''}" data_post_val="draft">
+                                <span class="fatfiles_radio_card_title">✏️ Chat Box Draft</span>
+                                <span class="fatfiles_radio_card_desc">Put in message box so you can write a message first</span>
+                            </div>
+                            <div class="fatfiles_radio_card ${this.settings.postingMode === 'send' ? 'fatfiles_radio_active' : ''}" data_post_val="send">
+                                <span class="fatfiles_radio_card_title">🚀 Send Right Away</span>
+                                <span class="fatfiles_radio_card_desc">Posts link straight to the channel automatically</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fatfiles_setting_item">
+                        <div class="fatfiles_setting_info">
+                            <div class="fatfiles_setting_label">Direct media embeds</div>
+                            <div class="fatfiles_setting_desc">Sends direct URLs for videos and audio so Discord embeds them natively.</div>
+                        </div>
+                        <label class="fatfiles_switch">
+                            <input type="checkbox" id="fatfiles_smart_embeds" ${this.settings.smartMediaEmbeds ? 'checked' : ''}>
+                            <span class="fatfiles_slider"></span>
+                        </label>
+                    </div>
+                    <div class="fatfiles_setting_item">
+                        <div class="fatfiles_setting_info">
+                            <div class="fatfiles_setting_label">Upload progress popup</div>
+                            <div class="fatfiles_setting_desc">Shows live upload speed, ETA, progress bar, and cancel button.</div>
+                        </div>
+                        <label class="fatfiles_switch">
+                            <input type="checkbox" id="fatfiles_show_widget" ${this.settings.showFloatingWidget ? 'checked' : ''}>
+                            <span class="fatfiles_slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="fatfiles_section_title">🚀 Diagnostics</div>
+                <div class="fatfiles_ping_box">
+                    <div class="fatfiles_setting_info">
+                        <div class="fatfiles_setting_label">Test Server Latency</div>
+                        <div class="fatfiles_setting_desc">Pings all upload servers to check connection health and speeds.</div>
+                    </div>
+                    <button id="fatfiles_test_ping_btn" class="fatfiles_ping_btn">Test All Hosts</button>
+                </div>
+                <div id="fatfiles_ping_results" class="fatfiles_ping_results_area"></div>
             </div>
         `;
 
@@ -1822,61 +2057,23 @@ module.exports = class FatFiles {
             this.saveSettings();
         });
 
-        const hostTmpfiles = panel.querySelector("#fatfiles_host_tmpfiles");
-        hostTmpfiles.addEventListener("change", (e) => {
-            this.settings.enabledHosts.tmpfiles = e.target.checked;
-            this.saveSettings();
+        const hostCheckboxes = panel.querySelectorAll("input[data_host_key]");
+        hostCheckboxes.forEach(cb => {
+            cb.addEventListener("change", (e) => {
+                const key = cb.getAttribute("data_host_key");
+                this.settings.enabledHosts[key] = e.target.checked;
+                this.saveSettings();
+            });
         });
 
-        const hostUguu = panel.querySelector("#fatfiles_host_uguu");
-        hostUguu.addEventListener("change", (e) => {
-            this.settings.enabledHosts.uguu = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostTempsh = panel.querySelector("#fatfiles_host_tempsh");
-        hostTempsh.addEventListener("change", (e) => {
-            this.settings.enabledHosts.tempsh = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostX0 = panel.querySelector("#fatfiles_host_x0");
-        hostX0.addEventListener("change", (e) => {
-            this.settings.enabledHosts.x0 = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostKappa = panel.querySelector("#fatfiles_host_kappa");
-        hostKappa.addEventListener("change", (e) => {
-            this.settings.enabledHosts.kappa = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostGofile = panel.querySelector("#fatfiles_host_gofile");
-        hostGofile.addEventListener("change", (e) => {
-            this.settings.enabledHosts.gofile = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostLitterbox = panel.querySelector("#fatfiles_host_litterbox");
-        hostLitterbox.addEventListener("change", (e) => {
-            this.settings.enabledHosts.litterbox = e.target.checked;
-            this.saveSettings();
-        });
-
-        const hostCatbox = panel.querySelector("#fatfiles_host_catbox");
-        hostCatbox.addEventListener("change", (e) => {
-            this.settings.enabledHosts.catbox = e.target.checked;
-            this.saveSettings();
-        });
-
-        const postModeRadios = panel.querySelectorAll('input[name="fatfiles_post_mode"]');
-        postModeRadios.forEach(radio => {
-            radio.addEventListener("change", (e) => {
-                if (e.target.checked) {
-                    this.settings.postingMode = e.target.value;
-                    this.saveSettings();
-                }
+        const radioCards = panel.querySelectorAll(".fatfiles_radio_card");
+        radioCards.forEach(card => {
+            card.addEventListener("click", () => {
+                radioCards.forEach(c => c.classList.remove("fatfiles_radio_active"));
+                card.classList.add("fatfiles_radio_active");
+                const val = card.getAttribute("data_post_val");
+                this.settings.postingMode = val;
+                this.saveSettings();
             });
         });
 
@@ -1897,20 +2094,28 @@ module.exports = class FatFiles {
 
         testPingBtn.addEventListener("click", async () => {
             testPingBtn.disabled = true;
-            testPingBtn.textContent = "Checking latency...";
-            pingResults.textContent = "Pinging endpoints...";
+            testPingBtn.textContent = "Pinging...";
+            pingResults.innerHTML = `<span class="fatfiles_ping_chip">Checking response times...</span>`;
 
-            const hosts = this.getHosts();
-            const results = [];
+            const hostsList = this.getHosts();
+            const chips = [];
 
-            for (const host of Object.values(hosts)) {
+            for (const host of Object.values(hostsList)) {
                 const latency = await this.pingHost(host, 3000);
-                results.push(`${host.name}: ${latency < 9000 ? latency + 'ms' : 'Timeout'}`);
+                const isGood = latency < 9000;
+                const statusClass = isGood ? 'fatfiles_ping_chip_good' : 'fatfiles_ping_chip_bad';
+                const label = isGood ? `${latency}ms` : 'Timeout';
+                chips.push(`
+                    <span class="fatfiles_ping_chip">
+                        <span style="color:${host.color}; font-weight:600;">${host.name}</span>
+                        <span class="${statusClass}">${label}</span>
+                    </span>
+                `);
             }
 
-            pingResults.textContent = results.join(" | ");
+            pingResults.innerHTML = chips.join("");
             testPingBtn.disabled = false;
-            testPingBtn.textContent = "Test speed to all hosts";
+            testPingBtn.textContent = "Test All Hosts";
         });
 
         return panel;
@@ -1952,162 +2157,6 @@ module.exports = class FatFiles {
         const g = (num >> 8) & 255;
         const b = num & 255;
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
-    initMediaEmbedder() {
-        this.processExistingMessages();
-
-        this.chatObserver = new MutationObserver((mutations) => {
-            if (!this.settings.smartMediaEmbeds) return;
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        this.scanElementForMedia(node);
-                    }
-                }
-            }
-        });
-
-        const target = document.getElementById("app-mount") || document.body;
-        this.chatObserver.observe(target, { childList: true, subtree: true });
-    }
-
-    cleanupMediaEmbedder() {
-        if (this.chatObserver) {
-            this.chatObserver.disconnect();
-            this.chatObserver = null;
-        }
-        document.querySelectorAll(".fatfiles_embed_container").forEach(el => el.remove());
-    }
-
-    processExistingMessages() {
-        if (!this.settings.smartMediaEmbeds) return;
-        const messageElements = document.querySelectorAll("[id^='chat-messages-'], [id^='message-content-'], li[class*='messageListItem']");
-        messageElements.forEach(el => this.scanElementForMedia(el));
-    }
-
-    scanElementForMedia(rootEl) {
-        if (!rootEl || !rootEl.querySelectorAll) return;
-
-        const messageNodes = rootEl.matches && (rootEl.matches("[id^='chat-messages-']") || rootEl.matches("li[class*='messageListItem']"))
-            ? [rootEl]
-            : rootEl.querySelectorAll("[id^='chat-messages-'], li[class*='messageListItem']");
-
-        if (messageNodes.length === 0) {
-            const contentEl = rootEl.matches && (rootEl.matches("[id^='message-content-']") || (rootEl.className && String(rootEl.className).includes("messageContent")))
-                ? rootEl
-                : rootEl.querySelector("[id^='message-content-'], [class*='messageContent']");
-            if (contentEl) {
-                this.embedMediaInMessageContent(contentEl);
-            }
-            return;
-        }
-
-        messageNodes.forEach(msgNode => {
-            const contentEl = msgNode.querySelector("[id^='message-content-'], [class*='messageContent']");
-            if (contentEl) {
-                this.embedMediaInMessageContent(contentEl);
-            }
-        });
-    }
-
-    embedMediaInMessageContent(contentEl) {
-        if (!contentEl) return;
-        const parent = contentEl.parentElement;
-        if (!parent) return;
-
-        if (parent.querySelector(".fatfiles_embed_container")) return;
-
-        const text = contentEl.innerText || contentEl.textContent || "";
-        const links = Array.from(contentEl.querySelectorAll("a[href]")).map(a => a.href).join(" ");
-        const fullText = `${text} ${links}`;
-
-        const mediaList = this.extractMediaUrlsFromText(fullText);
-        if (mediaList.length === 0) return;
-
-        const seenUrls = new Set();
-        const uniqueMedia = mediaList.filter(m => {
-            if (seenUrls.has(m.url)) return false;
-            seenUrls.add(m.url);
-            return true;
-        });
-
-        const container = document.createElement("div");
-        container.className = "fatfiles_embed_container";
-
-        for (const media of uniqueMedia) {
-            const itemWrapper = document.createElement("div");
-            itemWrapper.className = "fatfiles_embed_item";
-
-            const rawName = media.url.split("/").pop().split("?")[0] || "media_file";
-            let fileName = rawName;
-            try {
-                fileName = decodeURIComponent(rawName);
-            } catch (e) {}
-
-            if (media.type === "video") {
-                itemWrapper.innerHTML = `
-                    <div class="fatfiles_embed_bar">
-                        <span class="fatfiles_embed_filename">🎬 ${this.escapeHtml(fileName)}</span>
-                        <a class="fatfiles_embed_download" href="${this.escapeHtml(media.url)}" target="_blank" rel="noreferrer noopener" download>⬇️ Save</a>
-                    </div>
-                    <video class="fatfiles_video_player" src="${this.escapeHtml(media.url)}" controls preload="metadata" playsinline></video>
-                `;
-            } else if (media.type === "audio") {
-                itemWrapper.innerHTML = `
-                    <div class="fatfiles_embed_bar">
-                        <span class="fatfiles_embed_filename">🎵 ${this.escapeHtml(fileName)}</span>
-                        <a class="fatfiles_embed_download" href="${this.escapeHtml(media.url)}" target="_blank" rel="noreferrer noopener" download>⬇️ Save</a>
-                    </div>
-                    <audio class="fatfiles_audio_player" src="${this.escapeHtml(media.url)}" controls preload="metadata"></audio>
-                `;
-            } else if (media.type === "image") {
-                itemWrapper.innerHTML = `
-                    <div class="fatfiles_embed_bar">
-                        <span class="fatfiles_embed_filename">🖼️ ${this.escapeHtml(fileName)}</span>
-                        <a class="fatfiles_embed_download" href="${this.escapeHtml(media.url)}" target="_blank" rel="noreferrer noopener">🔍 View</a>
-                    </div>
-                    <img class="fatfiles_image_player" src="${this.escapeHtml(media.url)}" loading="lazy" alt="${this.escapeHtml(fileName)}">
-                `;
-                const img = itemWrapper.querySelector(".fatfiles_image_player");
-                if (img) {
-                    img.addEventListener("click", () => window.open(media.url, "_blank"));
-                }
-            }
-
-            container.appendChild(itemWrapper);
-        }
-
-        if (contentEl.nextSibling) {
-            parent.insertBefore(container, contentEl.nextSibling);
-        } else {
-            parent.appendChild(container);
-        }
-    }
-
-    extractMediaUrlsFromText(text) {
-        if (!text || typeof text !== "string") return [];
-        const urlRegex = /https?:\/\/[^\s<>"'`)]+/gi;
-        const matches = text.match(urlRegex) || [];
-        const mediaUrls = [];
-        const videoExts = ["mp4", "webm", "mov", "m4v", "mkv", "ogv"];
-        const audioExts = ["mp3", "ogg", "wav", "flac", "m4a", "aac", "opus"];
-        const imageExts = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
-
-        for (let rawUrl of matches) {
-            let cleanUrl = rawUrl.replace(/[.,;!?]+$/, "");
-            let cleanLower = cleanUrl.toLowerCase().split("?")[0].split("#")[0];
-            let ext = cleanLower.split(".").pop();
-
-            if (videoExts.includes(ext)) {
-                mediaUrls.push({ url: cleanUrl, type: "video", ext });
-            } else if (audioExts.includes(ext)) {
-                mediaUrls.push({ url: cleanUrl, type: "audio", ext });
-            } else if (imageExts.includes(ext)) {
-                mediaUrls.push({ url: cleanUrl, type: "image", ext });
-            }
-        }
-        return mediaUrls;
     }
 
     escapeHtml(str) {

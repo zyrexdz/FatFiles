@@ -692,7 +692,7 @@ module.exports = class FatFiles {
             <div class="fatfiles_modal_box">
                 <div class="fatfiles_modal_header">
                     <div class="fatfiles_modal_title_group">
-                        <span class="fatfiles_modal_icon">⚡</span>
+                        <span class="fatfiles_modal_icon">📁</span>
                         <h3 class="fatfiles_modal_title">Upload Big File</h3>
                     </div>
                     <button class="fatfiles_modal_close" title="Close">✕</button>
@@ -717,7 +717,7 @@ module.exports = class FatFiles {
                         </div>
                         <div class="fatfiles_option_content">
                             <div class="fatfiles_option_top">
-                                <span class="fatfiles_option_name" style="color: #5865F2;">⚡ Auto Pick (Fastest Server)</span>
+                                <span class="fatfiles_option_name" style="color: #5865F2;">Auto Pick (Fastest Server)</span>
                                 <span class="fatfiles_option_retention">Direct Player</span>
                             </div>
                             <div class="fatfiles_option_sub">
@@ -1938,7 +1938,7 @@ module.exports = class FatFiles {
 
         panel.innerHTML = `
             <div>
-                <div class="fatfiles_section_title">⚡ General</div>
+                <div class="fatfiles_section_title">⚙️ General</div>
                 <div class="fatfiles_card_group">
                     <div class="fatfiles_setting_item">
                         <div class="fatfiles_setting_info">
@@ -1963,7 +1963,7 @@ module.exports = class FatFiles {
                             <div class="fatfiles_setting_desc">Choose a favorite server or leave it on Auto to pick the fastest one.</div>
                         </div>
                         <select id="fatfiles_default_host" class="fatfiles_select">
-                            <option value="auto" ${this.settings.defaultHost === 'auto' ? 'selected' : ''}>⚡ Auto (Fastest Server)</option>
+                            <option value="auto" ${this.settings.defaultHost === 'auto' ? 'selected' : ''}>Auto (Fastest Server)</option>
                             <option value="tmpfiles" ${this.settings.defaultHost === 'tmpfiles' ? 'selected' : ''}>Tmpfiles.org (10 GB, direct link)</option>
                             <option value="gofile" ${this.settings.defaultHost === 'gofile' ? 'selected' : ''}>Gofile.io (10 GB, cloud storage)</option>
                             <option value="tempsh" ${this.settings.defaultHost === 'tempsh' ? 'selected' : ''}>Temp.sh (4 GB, 3 days)</option>

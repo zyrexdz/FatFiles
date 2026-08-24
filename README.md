@@ -25,7 +25,7 @@
 ## ✨ Features
 
 - 🚀 **Bypass Discords 10MB Limit**: Upload files up to 10GB without getting blocked.
-- ⚡ **Auto Pick (Fastest Server)**: Checks latency to all enabled hosts and automatically uses the fastest server for your file.
+- 🎯 **Auto Pick (Fastest Server)**: Checks latency to all enabled hosts and automatically uses the fastest server for your file.
 - 🎬 **Direct Media Embeds**: Videos, songs, and images play right inside Discord natively.
 - 📊 **Live Floating Upload Card**: Clean popup in the bottom right corner shows real-time upload speed, percentage, ETA, and a cancel button.
 - 🎛️ **Pre Upload Modal**: Pick your favorite host with one click, or check the box to always auto-upload without asking.

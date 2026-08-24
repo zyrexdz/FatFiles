@@ -163,6 +163,7 @@ module.exports = class FatFiles {
             tempsh: {
                 id: "tempsh",
                 name: "Temp.sh",
+                requiresCorsBypass: true,
                 maxSize: 4 * 1024 * 1024 * 1024,
                 retentionText: "3 Days (Up to 4GB)",
                 method: "POST",
@@ -185,6 +186,7 @@ module.exports = class FatFiles {
             x0: {
                 id: "x0",
                 name: "x0.at",
+                requiresCorsBypass: true,
                 maxSize: 1024 * 1024 * 1024,
                 retentionText: "3 to 100 Days (Up to 1GB)",
                 method: "POST",
@@ -207,6 +209,7 @@ module.exports = class FatFiles {
             litterbox: {
                 id: "litterbox",
                 name: "Litterbox",
+                requiresCorsBypass: true,
                 maxSize: 1024 * 1024 * 1024,
                 retentionText: "72 Hours (Up to 1GB)",
                 method: "POST",
@@ -892,13 +895,18 @@ module.exports = class FatFiles {
         }
 
         return new Promise((resolve, reject) => {
+            if (host.requiresCorsBypass && typeof BdApi !== "undefined" && BdApi.Net && typeof BdApi.Net.fetch === "function") {
+                this.executeBdFetchUpload(uploadId, file, host, resolve, reject, uploadUrl);
+                return;
+            }
+
             const xhr = new XMLHttpRequest();
             let lastLoaded = 0;
             let lastTime = performance.now();
             let speedSmooth = 0;
             let settled = false;
 
-            const STALL_TIMEOUT_MS = 30000;
+            const STALL_TIMEOUT_MS = 120000;
             let stallTimer = setTimeout(() => {
                 if (!settled) {
                     try { xhr.abort(); } catch (e) {}
@@ -1031,6 +1039,77 @@ module.exports = class FatFiles {
                 }
             }
         });
+    }
+
+    async executeBdFetchUpload(uploadId, file, host, resolve, reject, uploadUrl) {
+        let settled = false;
+        const controller = new AbortController();
+
+        const cancelFn = () => {
+            try { controller.abort(); } catch(e) {}
+            this.activeUploads.delete(uploadId);
+            this.removeFloatingCard(uploadId);
+            BdApi.UI.showToast("Cancelled upload.", { type: "info" });
+            if (!settled) {
+                settled = true;
+                reject(new Error("Cancelled upload."));
+            }
+        };
+
+        this.activeUploads.set(uploadId, {
+            file,
+            host,
+            cancel: cancelFn
+        });
+
+        this.updateFloatingCard(uploadId, {
+            progress: 50,
+            speed: "CORS Bypass",
+            statusText: "Uploading (No progress bar for this host)..."
+        });
+
+        try {
+            const method = host.method || "POST";
+            const body = typeof host.prepareBody === "function" ? host.prepareBody(file, this.settings) : file;
+            const options = {
+                method,
+                body,
+                signal: controller.signal,
+                headers: {}
+            };
+
+            if (typeof host.prepareHeaders === "function") {
+                options.headers = host.prepareHeaders(this.settings);
+            }
+
+            const response = await BdApi.Net.fetch(uploadUrl, options);
+            this.activeUploads.delete(uploadId);
+            if (settled) return;
+            settled = true;
+
+            const responseText = await response.text();
+            
+            if (response.ok) {
+                try {
+                    const directUrl = host.parseResponse(responseText);
+                    resolve(directUrl);
+                } catch (err) {
+                    reject(new Error(`Could not read link from ${host.name}: ${err.message}`));
+                }
+            } else {
+                reject(new Error(`Server gave error ${response.status} (${response.statusText || 'Unknown'})`));
+            }
+        } catch (err) {
+            this.activeUploads.delete(uploadId);
+            if (!settled) {
+                settled = true;
+                if (err.name === 'AbortError') {
+                    reject(new Error(`Upload to ${host.name} was stopped`));
+                } else {
+                    reject(new Error(`Network error while connecting to ${host.name}: ${err.message}`));
+                }
+            }
+        }
     }
 
     cancelAllActiveUploads() {

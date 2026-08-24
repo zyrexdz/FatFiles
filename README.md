@@ -29,7 +29,7 @@
 - 🎬 **Direct Media Embeds**: Videos, songs, and images play right inside Discord natively.
 - 📊 **Live Floating Upload Card**: Clean popup in the bottom right corner shows real-time upload speed, percentage, ETA, and a cancel button.
 - 🎛️ **Pre Upload Modal**: Pick your favorite host with one click, or check the box to always auto-upload without asking.
-- 🛠️ **8 Fast Free Hosts**: Tmpfiles.org, Uguu, Temp.sh, x0, Kappa, Gofile, Litterbox, and Catbox (100% free, zero login or API keys needed).
+- 🛠️ **9 Fast Free Hosts**: Buzzheavier, Gofile, Temp.sh, Litterbox, x0, Catbox, Uguu, Tmpfiles.org, and Segs.lol (100% free, zero login or API keys needed).
 - ⚙️ **Customizable Settings**: Set your custom size limit trigger, change posting mode (draft or instant send), and toggle hosts on or off.
 
 ---
@@ -38,14 +38,16 @@
 
 | Host | Max Size | Retention | Direct Player Embeds |
 | :--- | :--- | :--- | :--- |
-| **Tmpfiles.org** | 10 GB | 24 Hours | ✅ Yes (High speed direct stream) |
+| **Buzzheavier** | Unlimited / 10 GB | 4 Days | ✅ Yes (Fast cloud storage) |
 | **Gofile.io** | 10 GB | Active Cloud | 📄 Download Page |
 | **Temp.sh** | 4 GB | 3 Days | ✅ Yes (Fast cloud storage) |
 | **Litterbox** | 1 GB | Up to 72 Hours | 📄 Direct Download |
-| **x0.at** | 512 MB | 30 to 365 Days | ✅ Yes (Long term storage) |
-| **Kappa.lol** | 500 MB | 30+ Days | ✅ Yes (Direct video player) |
+| **x0.at** | 1 GB | 3 to 100 Days | ✅ Yes (Long term storage) |
 | **Catbox.moe** | 200 MB | Permanent | ✅ Yes (Direct media link) |
-| **Uguu.se** | 100 MB | 3 Hours | ✅ Yes (Quick temporary link) |
+| **Uguu.se** | 128 MB | 3 Hours | ✅ Yes (Quick temporary link) |
+| **Tmpfiles.org** | 100 MB | 24 Hours | ✅ Yes (High speed direct stream) |
+| **Segs.lol** | 100 MB | Permanent | ✅ Yes (Direct video player) |
+
 
 ---
 

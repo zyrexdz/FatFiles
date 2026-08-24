@@ -19,14 +19,15 @@ module.exports = class FatFiles {
             defaultHost: "auto",
             askBeforeUpload: true,
             enabledHosts: {
-                tmpfiles: true,
-                uguu: true,
+                buzzheavier: true,
+                gofile: true,
                 tempsh: true,
                 x0: true,
-                kappa: true,
-                gofile: true,
                 litterbox: true,
-                catbox: true
+                catbox: true,
+                uguu: true,
+                tmpfiles: true,
+                kappa: true
             },
             litterboxExpiry: "72h",
             postingMode: "draft",
@@ -47,15 +48,45 @@ module.exports = class FatFiles {
 
     getHosts() {
         return {
-            tmpfiles: {
-                id: "tmpfiles",
-                name: "Tmpfiles.org",
+            buzzheavier: {
+                id: "buzzheavier",
+                name: "Buzzheavier",
                 maxSize: 10 * 1024 * 1024 * 1024,
-                retentionText: "24 Hours (Fast direct link)",
+                retentionText: "4 Days (No size limit)",
+                method: "PUT",
+                uploadUrl: "https://w.buzzheavier.com",
+                pingUrl: "https://buzzheavier.com",
+                color: "#e84393",
+                getUploadUrl: (file) => {
+                    const safeName = encodeURIComponent(file.name || "upload");
+                    return `https://w.buzzheavier.com/${safeName}`;
+                },
+                prepareBody: (file) => {
+                    return file;
+                },
+                prepareHeaders: () => {
+                    return { "Content-Type": "application/octet-stream" };
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.data && json.data.id) {
+                            return `https://buzzheavier.com/${json.data.id}`;
+                        }
+                    } catch (e) {}
+                    if (responseText.startsWith("http")) return responseText.trim();
+                    throw new Error(`Buzzheavier error: ${responseText}`);
+                }
+            },
+            gofile: {
+                id: "gofile",
+                name: "Gofile.io",
+                maxSize: 10 * 1024 * 1024 * 1024,
+                retentionText: "Active Cloud (Up to 10GB)",
                 method: "POST",
-                uploadUrl: "https://tmpfiles.org/api/v1/upload",
-                pingUrl: "https://tmpfiles.org",
-                color: "#2ed573",
+                uploadUrl: "https://upload.gofile.io/uploadfile",
+                pingUrl: "https://upload.gofile.io",
+                color: "#10ac84",
                 prepareBody: (file) => {
                     const fd = new FormData();
                     fd.append("file", file, file.name);
@@ -64,47 +95,13 @@ module.exports = class FatFiles {
                 parseResponse: (responseText) => {
                     try {
                         const json = JSON.parse(responseText);
-                        if (json.status === "success" && json.data && json.data.url) {
-                            let rawUrl = json.data.url;
-                            if (rawUrl.includes("tmpfiles.org/") && !rawUrl.includes("tmpfiles.org/dl/")) {
-                                return rawUrl.replace("tmpfiles.org/", "tmpfiles.org/dl/");
-                            }
-                            return rawUrl;
+                        if (json.status === "ok" && json.data && json.data.downloadPage) {
+                            return json.data.downloadPage;
                         }
-                        if (responseText.startsWith("http")) return responseText.trim();
-                        throw new Error(json.message || "Could not get upload link from Tmpfiles");
+                        throw new Error(json.message || "Gofile upload failed");
                     } catch (e) {
-                        if (responseText.startsWith("http")) return responseText.trim();
-                        throw new Error(`Tmpfiles error: ${e.message || responseText}`);
+                        throw new Error(`Gofile error: ${e.message || responseText}`);
                     }
-                }
-            },
-            uguu: {
-                id: "uguu",
-                name: "Uguu.se",
-                maxSize: 100 * 1024 * 1024,
-                retentionText: "3 Hours (Quick temporary link)",
-                method: "POST",
-                uploadUrl: "https://uguu.se/upload",
-                pingUrl: "https://uguu.se",
-                color: "#e056fd",
-                prepareBody: (file) => {
-                    const fd = new FormData();
-                    fd.append("files[]", file, file.name);
-                    return fd;
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.success && json.files && json.files[0] && json.files[0].url) {
-                            return json.files[0].url;
-                        }
-                    } catch (e) {}
-                    const url = responseText.trim();
-                    if (url.startsWith("http://") || url.startsWith("https://")) {
-                        return url;
-                    }
-                    throw new Error(`Uguu error: ${responseText}`);
                 }
             },
             tempsh: {
@@ -132,8 +129,8 @@ module.exports = class FatFiles {
             x0: {
                 id: "x0",
                 name: "x0.at",
-                maxSize: 512 * 1024 * 1024,
-                retentionText: "30 to 365 Days",
+                maxSize: 1024 * 1024 * 1024,
+                retentionText: "3 to 100 Days (Up to 1GB)",
                 method: "POST",
                 uploadUrl: "https://x0.at",
                 pingUrl: "https://x0.at",
@@ -149,68 +146,6 @@ module.exports = class FatFiles {
                         return url;
                     }
                     throw new Error(`x0 error: ${responseText}`);
-                }
-            },
-            kappa: {
-                id: "kappa",
-                name: "Kappa.lol",
-                maxSize: 500 * 1024 * 1024,
-                retentionText: "30+ Days (Direct stream link)",
-                method: "POST",
-                uploadUrl: "https://kappa.lol/api/upload",
-                pingUrl: "https://kappa.lol",
-                color: "#ff9f43",
-                prepareBody: (file) => {
-                    const fd = new FormData();
-                    fd.append("file", file, file.name);
-                    return fd;
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.link) return json.link;
-                        if (json.id) {
-                            const ext = json.ext || "";
-                            return `https://kappa.lol/${json.id}${ext}`;
-                        }
-                    } catch (e) {}
-                    if (responseText.startsWith("http")) return responseText.trim();
-                    throw new Error(`Kappa error: ${responseText}`);
-                }
-            },
-            gofile: {
-                id: "gofile",
-                name: "Gofile.io",
-                maxSize: 10 * 1024 * 1024 * 1024,
-                retentionText: "Active Cloud (Up to 10GB)",
-                method: "POST",
-                pingUrl: "https://api.gofile.io/servers",
-                color: "#10ac84",
-                getDynamicUploadUrl: async () => {
-                    try {
-                        const res = await fetch("https://api.gofile.io/servers");
-                        const json = await res.json();
-                        if (json.status === "ok" && json.data && json.data.servers && json.data.servers[0]) {
-                            return `https://${json.data.servers[0].name}.gofile.io/contents/uploadfile`;
-                        }
-                    } catch (e) {}
-                    return "https://upload.gofile.io/uploadfile";
-                },
-                prepareBody: (file) => {
-                    const fd = new FormData();
-                    fd.append("file", file, file.name);
-                    return fd;
-                },
-                parseResponse: (responseText) => {
-                    try {
-                        const json = JSON.parse(responseText);
-                        if (json.status === "ok" && json.data && json.data.downloadPage) {
-                            return json.data.downloadPage;
-                        }
-                        throw new Error(json.message || "Gofile upload failed");
-                    } catch (e) {
-                        throw new Error(`Gofile error: ${e.message || responseText}`);
-                    }
                 }
             },
             litterbox: {
@@ -258,6 +193,93 @@ module.exports = class FatFiles {
                         return url;
                     }
                     throw new Error(`Catbox error: ${responseText}`);
+                }
+            },
+            uguu: {
+                id: "uguu",
+                name: "Uguu.se",
+                maxSize: 128 * 1024 * 1024,
+                retentionText: "3 Hours (Up to 128MB)",
+                method: "POST",
+                uploadUrl: "https://uguu.se/upload",
+                pingUrl: "https://uguu.se",
+                color: "#e056fd",
+                prepareBody: (file) => {
+                    const fd = new FormData();
+                    fd.append("files[]", file, file.name);
+                    return fd;
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.success && json.files && json.files[0] && json.files[0].url) {
+                            return json.files[0].url;
+                        }
+                    } catch (e) {}
+                    const url = responseText.trim();
+                    if (url.startsWith("http://") || url.startsWith("https://")) {
+                        return url;
+                    }
+                    throw new Error(`Uguu error: ${responseText}`);
+                }
+            },
+            tmpfiles: {
+                id: "tmpfiles",
+                name: "Tmpfiles.org",
+                maxSize: 100 * 1024 * 1024,
+                retentionText: "24 Hours (Up to 100MB)",
+                method: "POST",
+                uploadUrl: "https://tmpfiles.org/api/v1/upload",
+                pingUrl: "https://tmpfiles.org",
+                color: "#2ed573",
+                prepareBody: (file) => {
+                    const fd = new FormData();
+                    fd.append("file", file, file.name);
+                    return fd;
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.status === "success" && json.data && json.data.url) {
+                            let rawUrl = json.data.url;
+                            if (rawUrl.includes("tmpfiles.org/") && !rawUrl.includes("tmpfiles.org/dl/")) {
+                                return rawUrl.replace("tmpfiles.org/", "tmpfiles.org/dl/");
+                            }
+                            return rawUrl;
+                        }
+                        if (responseText.startsWith("http")) return responseText.trim();
+                        throw new Error(json.message || "Could not get upload link from Tmpfiles");
+                    } catch (e) {
+                        if (responseText.startsWith("http")) return responseText.trim();
+                        throw new Error(`Tmpfiles error: ${e.message || responseText}`);
+                    }
+                }
+            },
+            kappa: {
+                id: "kappa",
+                name: "Segs.lol",
+                maxSize: 100 * 1024 * 1024,
+                retentionText: "Permanent (Up to 100MB)",
+                method: "POST",
+                uploadUrl: "https://segs.lol/api/upload",
+                pingUrl: "https://segs.lol",
+                color: "#ff9f43",
+                prepareBody: (file) => {
+                    const fd = new FormData();
+                    fd.append("file", file, file.name);
+                    return fd;
+                },
+                parseResponse: (responseText) => {
+                    try {
+                        const json = JSON.parse(responseText);
+                        if (json.link) return json.link;
+                        if (json.id) {
+                            const ext = json.ext || "";
+                            return `https://segs.lol/${json.id}${ext}`;
+                        }
+                    } catch (e) {}
+                    if (responseText.startsWith("http")) return responseText.trim();
+                    throw new Error(`Segs.lol error: ${responseText}`);
                 }
             }
         };
@@ -587,15 +609,31 @@ module.exports = class FatFiles {
     }
 
     getHostTierPriority(hostId, fileSize) {
+        const largeCutoff = 128 * 1024 * 1024;
+        if (fileSize > largeCutoff) {
+            const largeOrder = {
+                buzzheavier: 1,
+                gofile: 2,
+                tempsh: 3,
+                x0: 4,
+                litterbox: 5,
+                catbox: 6,
+                tmpfiles: 7,
+                uguu: 8,
+                kappa: 9
+            };
+            return largeOrder[hostId] || 10;
+        }
         const order = {
             tmpfiles: 1,
             uguu: 2,
-            tempsh: 3,
-            x0: 4,
+            x0: 3,
+            tempsh: 4,
             kappa: 5,
             gofile: 6,
             litterbox: 7,
-            catbox: 8
+            catbox: 8,
+            buzzheavier: 9
         };
         return order[hostId] || 10;
     }
@@ -718,10 +756,10 @@ module.exports = class FatFiles {
                         <div class="fatfiles_option_content">
                             <div class="fatfiles_option_top">
                                 <span class="fatfiles_option_name" style="color: #5865F2;">Auto Pick (Fastest Server)</span>
-                                <span class="fatfiles_option_retention">Direct Player</span>
+                                <span class="fatfiles_option_retention">Smart Route</span>
                             </div>
                             <div class="fatfiles_option_sub">
-                                <span>Uses Tmpfiles.org high speed stream (18.5s)</span>
+                                <span>Picks the fastest available server automatically</span>
                                 <span class="fatfiles_option_status" style="color: #2ed573;">Recommended</span>
                             </div>
                         </div>
@@ -891,15 +929,46 @@ module.exports = class FatFiles {
             let lastLoaded = 0;
             let lastTime = performance.now();
             let speedSmooth = 0;
+            let settled = false;
+
+            const STALL_TIMEOUT_MS = 30000;
+            let stallTimer = setTimeout(() => {
+                if (!settled) {
+                    try { xhr.abort(); } catch (e) {}
+                    this.activeUploads.delete(uploadId);
+                    settled = true;
+                    reject(new Error(`Upload to ${host.name} stalled (no progress for 30s)`));
+                }
+            }, STALL_TIMEOUT_MS);
+
+            const resetStallTimer = () => {
+                clearTimeout(stallTimer);
+                stallTimer = setTimeout(() => {
+                    if (!settled) {
+                        try { xhr.abort(); } catch (e) {}
+                        this.activeUploads.delete(uploadId);
+                        settled = true;
+                        reject(new Error(`Upload to ${host.name} stalled (no progress for 30s)`));
+                    }
+                }, STALL_TIMEOUT_MS);
+            };
+
+            const cleanup = () => {
+                clearTimeout(stallTimer);
+                this.activeUploads.delete(uploadId);
+            };
 
             const cancelFn = () => {
                 try {
                     xhr.abort();
                 } catch (e) {}
-                this.activeUploads.delete(uploadId);
+                cleanup();
                 this.removeFloatingCard(uploadId);
                 BdApi.UI.showToast("Cancelled upload.", { type: "info" });
-                reject(new Error("Cancelled upload."));
+                if (!settled) {
+                    settled = true;
+                    reject(new Error("Cancelled upload."));
+                }
             };
 
             this.activeUploads.set(uploadId, {
@@ -910,6 +979,7 @@ module.exports = class FatFiles {
             });
 
             xhr.upload.addEventListener("progress", (e) => {
+                resetStallTimer();
                 if (e.lengthComputable && e.total > 0) {
                     const percent = Math.round((e.loaded / e.total) * 100);
                     const now = performance.now();
@@ -935,7 +1005,9 @@ module.exports = class FatFiles {
             });
 
             xhr.addEventListener("load", () => {
-                this.activeUploads.delete(uploadId);
+                cleanup();
+                if (settled) return;
+                settled = true;
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const directUrl = host.parseResponse(xhr.responseText);
@@ -949,17 +1021,23 @@ module.exports = class FatFiles {
             });
 
             xhr.addEventListener("error", () => {
-                this.activeUploads.delete(uploadId);
+                cleanup();
+                if (settled) return;
+                settled = true;
                 reject(new Error(`Network error while connecting to ${host.name}`));
             });
 
             xhr.addEventListener("timeout", () => {
-                this.activeUploads.delete(uploadId);
+                cleanup();
+                if (settled) return;
+                settled = true;
                 reject(new Error(`Upload to ${host.name} took too long and timed out`));
             });
 
             xhr.addEventListener("abort", () => {
-                this.activeUploads.delete(uploadId);
+                cleanup();
+                if (settled) return;
+                settled = true;
                 reject(new Error(`Upload to ${host.name} was stopped`));
             });
 
@@ -979,8 +1057,11 @@ module.exports = class FatFiles {
 
                 xhr.send(body);
             } catch (sendError) {
-                this.activeUploads.delete(uploadId);
-                reject(new Error(`Could not start upload: ${sendError.message}`));
+                cleanup();
+                if (!settled) {
+                    settled = true;
+                    reject(new Error(`Could not start upload: ${sendError.message}`));
+                }
             }
         });
     }
@@ -1936,6 +2017,10 @@ module.exports = class FatFiles {
             </div>
         `).join("");
 
+        const hostOptionsHtml = Object.values(hosts).map(h => `
+            <option value="${h.id}" ${this.settings.defaultHost === h.id ? 'selected' : ''}>${h.name} (${this.formatBytes(h.maxSize)})</option>
+        `).join("");
+
         panel.innerHTML = `
             <div>
                 <div class="fatfiles_section_title">⚙️ General</div>
@@ -1964,14 +2049,7 @@ module.exports = class FatFiles {
                         </div>
                         <select id="fatfiles_default_host" class="fatfiles_select">
                             <option value="auto" ${this.settings.defaultHost === 'auto' ? 'selected' : ''}>Auto (Fastest Server)</option>
-                            <option value="tmpfiles" ${this.settings.defaultHost === 'tmpfiles' ? 'selected' : ''}>Tmpfiles.org (10 GB, direct link)</option>
-                            <option value="gofile" ${this.settings.defaultHost === 'gofile' ? 'selected' : ''}>Gofile.io (10 GB, cloud storage)</option>
-                            <option value="tempsh" ${this.settings.defaultHost === 'tempsh' ? 'selected' : ''}>Temp.sh (4 GB, 3 days)</option>
-                            <option value="litterbox" ${this.settings.defaultHost === 'litterbox' ? 'selected' : ''}>Litterbox (1 GB, 72 hours)</option>
-                            <option value="x0" ${this.settings.defaultHost === 'x0' ? 'selected' : ''}>x0.at (512 MB, long retention)</option>
-                            <option value="kappa" ${this.settings.defaultHost === 'kappa' ? 'selected' : ''}>Kappa.lol (500 MB, video player)</option>
-                            <option value="catbox" ${this.settings.defaultHost === 'catbox' ? 'selected' : ''}>Catbox.moe (200 MB, permanent)</option>
-                            <option value="uguu" ${this.settings.defaultHost === 'uguu' ? 'selected' : ''}>Uguu.se (100 MB, temporary)</option>
+                            ${hostOptionsHtml}
                         </select>
                     </div>
                 </div>

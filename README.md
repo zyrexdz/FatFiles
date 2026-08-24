@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ FatFiles
+# FatFiles
 
 ### Send big files on Discord without Nitro
 
@@ -34,7 +34,7 @@
 
 ---
 
-## ⚡ Supported File Hosts
+## Supported File Hosts
 
 | Host | Max Size | Retention | Direct Player Embeds |
 | :--- | :--- | :--- | :--- |
@@ -83,7 +83,7 @@ Done! You're ready to upload big files.
 ## 🎮 How to Use
 
 1. **Drag & Drop Any Big File**: Drag any file over 10MB into any Discord channel or DM.
-2. **Choose or Auto Pick**: A small popup will appear asking where you want to upload it (or leave it on **⚡ Auto Pick** for the fastest server).
+2. **Choose or Auto Pick**: A small popup will appear asking where you want to upload it (or leave it on **Auto Pick** for the fastest server).
 3. **Watch the Progress**: A small card appears at the bottom right showing live upload speed and ETA.
 4. **Send**: Once finished, the playable direct link is automatically put into your chat box!
 
@@ -93,16 +93,24 @@ Done! You're ready to upload big files.
 
 Click the gear icon next to **FatFiles** in your BetterDiscord Plugins list to customize:
 
-- **File size limit (MB)**: Default is 10MB. Any file bigger than this triggers FatFiles.
+<br/>
+
+<div align="center">
+  <img src="settings_preview.png" alt="FatFiles Settings Preview" width="600"/>
+</div>
+
+<br/>
+
+- **Upload limit trigger (MB)**: Default is 10MB. Any file bigger than this triggers FatFiles.
 - **Ask before uploading**: Toggle the host selection popup on or off.
-- **Favorite host**: Set a default host or keep it on Auto.
-- **Enabled hosts**: Turn individual hosts on or off based on your preference.
-- **Posting mode**:
-  - `Put in chat box`: Lets you check the link and add your own text before sending.
-  - `Send straight to chat`: Sends the link into the channel immediately.
-- **Direct media embeds**: Formats video, audio, and image links so Discord embeds and plays them natively.
-- **Show upload progress card**: Displays the live upload card with speed and cancel button.
-- **Test speed to all hosts**: One click benchmark button to test your ping to every host.
+- **Preferred host**: Set a default host or keep it on Auto.
+- **Active upload hosts**: Turn individual hosts on or off based on your preference.
+- **How to post links**:
+  - `Chat Box Draft`: Put in message box so you can write a message first.
+  - `Send Right Away`: Posts link straight to the channel automatically.
+- **Direct media embeds**: Sends direct URLs for videos and audio so Discord embeds them natively.
+- **Upload progress popup**: Displays the live floating card with speed, ETA, and cancel button.
+- **Test server latency**: One click benchmark button to ping all enabled hosts.
 
 ---
 
